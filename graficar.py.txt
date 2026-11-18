@@ -1,0 +1,40 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+# Cargar los archivos generados por C++
+df_tray = pd.read_csv("trayectorias.txt", sep="\t")
+df_col = pd.read_csv("colisiones.txt", sep="\t")
+
+fig, ax = plt.subplots(figsize=(8, 8))
+
+# Limites de la caja (100 x 100)
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 100)
+ax.set_aspect('equal')
+ax.grid(True, linestyle='--', alpha=0.5)
+
+# Dibujar los 4 obstaculos cuadrados estaticos (centro, lado = 10)
+obstaculos = [(30, 30), (70, 30), (30, 70), (70, 70)]
+for idx, (cx, cy) in enumerate(obstaculos, start=1):
+    rect = patches.Rectangle((cx - 5, cy - 5), 10, 10, facecolor='gray', edgecolor='black', alpha=0.6)
+    ax.add_patch(rect)
+    ax.text(cx, cy, f"Obs {idx}", color='white', ha='center', va='center', fontweight='bold')
+
+# Dibujar trayectorias de cada particula mientras este activa
+for pid, grupo in df_tray[df_tray["activa"] == 1].groupby("id"):
+    ax.plot(grupo["x"], grupo["y"], label=f"Particula {pid}")
+    ax.scatter(grupo["x"].iloc[0], grupo["y"].iloc[0], marker='o', s=50)  # Punto inicial
+
+# Marcar puntos exactos de colision segun su tipo
+for tipo, marcador, color in [("Pared", "x", "blue"), ("Obstaculo", "^", "orange"), ("Fusion", "*", "red")]:
+    sub = df_col[df_col["tipo"] == tipo]
+    ax.scatter(sub["x"], sub["y"], marker=marcador, color=color, s=90, label=f"Colision: {tipo}", zorder=5)
+
+ax.set_title("Simulacion de Colisiones Multiples en Tiempo Discreto")
+ax.set_xlabel("Posicion X")
+ax.set_ylabel("Posicion Y")
+ax.legend(loc="upper right", fontsize=8)
+plt.tight_layout()
+plt.savefig("grafica_simulacion.png", dpi=300)
+plt.show()
